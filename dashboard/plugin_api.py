@@ -105,13 +105,21 @@ def _run_in_home(home: Optional[Path], fn: Callable[[], Any]) -> Any:
         return fn()
     try:
         from hermes_constants import reset_hermes_home_override, set_hermes_home_override
+        from agent.secret_scope import build_profile_secret_scope, reset_secret_scope, set_secret_scope
+        from hermes_cli.env_loader import hydrate_profile_secret_sources
     except Exception:  # noqa: BLE001
         return fn()
-    token = set_hermes_home_override(home)
+    # ThreadPoolExecutor workers do not inherit the request's ContextVars. Hydrate and bind the
+    # target profile's secret scope here so env-backed pool entries (including Bitwarden-backed
+    # OPENROUTER_API_KEY references) are usable by runtime_provider in the probe.
+    hydrate_profile_secret_sources(home)
+    home_token = set_hermes_home_override(home)
+    secret_token = set_secret_scope(build_profile_secret_scope(home))
     try:
         return fn()
     finally:
-        reset_hermes_home_override(token)
+        reset_secret_scope(secret_token)
+        reset_hermes_home_override(home_token)
 
 
 def _server_home() -> Path:
