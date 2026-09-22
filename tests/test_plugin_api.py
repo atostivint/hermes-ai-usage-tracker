@@ -15,7 +15,7 @@ spec.loader.exec_module(module)
 
 class ProfileScopeTests(unittest.TestCase):
     def test_profile_callback_runs_with_hydrated_secret_scope(self):
-        home = Path("/tmp/hermes-profile")
+        home = Path.home() / ".hermes/cache/scratch/hermes-profile"
         with patch("hermes_constants.set_hermes_home_override", return_value="home-token") as set_home, \
              patch("hermes_constants.reset_hermes_home_override") as reset_home, \
              patch("hermes_cli.env_loader.hydrate_profile_secret_sources") as hydrate, \
@@ -33,7 +33,7 @@ class ProfileScopeTests(unittest.TestCase):
         reset_home.assert_called_once_with("home-token")
 
     def test_openrouter_runtime_resolves_scoped_env_credential(self):
-        home = Path("/tmp/hermes-profile")
+        home = Path.home() / ".hermes/cache/scratch/hermes-profile"
         with patch("hermes_cli.env_loader.hydrate_profile_secret_sources"), \
              patch("agent.secret_scope.build_profile_secret_scope", return_value={"OPENROUTER_API_KEY": "fake-key"}):
             key = module._run_in_home(home, lambda: module._runtime_key("openrouter"))
